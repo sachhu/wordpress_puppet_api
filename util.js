@@ -40,11 +40,7 @@ async function makePostRequest(data) {
 // Function to make API requests via Puppeteer
 async function makeApiRequest(endpoint, method = 'GET', data = null) {
     const url = process.env.URL + endpoint;
-
-    const page = await browser.newPage();
-
     try {
-        await page.goto(process.env.URL);
         const encodedCredentials = Buffer.from(`${process.env.USERNAME}:${process.env.PASSWORD}`).toString('base64');
         const authHeader = `Basic ${encodedCredentials}`;
         console.log(url)
@@ -79,14 +75,10 @@ async function makeApiRequest(endpoint, method = 'GET', data = null) {
             console.error(`Response Body: ${response.body}`);
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
-        await page.close();
-
-
         return response;
 
     } catch (error) {
         console.error("Error:", error);
-        await page.close();
         throw error;
     }
 }
@@ -129,9 +121,12 @@ async function getOrCreateTag(tagName) {
 
 // Function to create a blog post
 let browser
+let page
 async function createBlogPost(title, content, categories, tags) {
     try {
         browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+        page = await browser.newPage();
+        await page.goto(process.env.URL);
         // Resolve category and tag IDs
         let tagIds = [];
         for (let i = 0; i < tags.length; i++) {
