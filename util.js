@@ -40,7 +40,7 @@ async function makePostRequest(data) {
 // Function to make API requests via Puppeteer
 async function makeApiRequest(endpoint, method = 'GET', data = null) {
     const url = process.env.URL + endpoint;
-    const browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+
     const page = await browser.newPage();
 
     try {
@@ -79,14 +79,14 @@ async function makeApiRequest(endpoint, method = 'GET', data = null) {
             console.error(`Response Body: ${response.body}`);
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
-        await browser.close();
+        await page.close();
 
 
         return response;
 
     } catch (error) {
         console.error("Error:", error);
-        await browser.close();
+        await page.close();
         throw error;
     }
 }
@@ -128,12 +128,14 @@ async function getOrCreateTag(tagName) {
 }
 
 // Function to create a blog post
+let browser
 async function createBlogPost(title, content, categories, tags) {
     try {
+        browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
         // Resolve category and tag IDs
         let tagIds = [];
         for (let i = 0; i < tags.length; i++) {
-            tagIds = await getOrCreateTag(tags[i])
+            tagIds[i] = await getOrCreateTag(tags[i])
         }
         let categoryIds = [];
         for (let i = 0; i < categories.length; i++) {
@@ -159,8 +161,10 @@ async function createBlogPost(title, content, categories, tags) {
 
         const newPost = await makeApiRequest(`/wp-json/wp/v2/posts`, 'POST', postData);
         console.log("✅ Blog Post Created:", newPost.link);
+        await browser?.close()
     } catch (error) {
         console.error("❌ Error Creating Post:", error);
+        await browser?.close()
     }
 }
 
