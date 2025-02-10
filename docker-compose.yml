@@ -1,0 +1,8 @@
+version: "3.9"  # Or a compatible version
+
+services:
+  your-app-name: 
+    build: . 
+    ports:
+      - "2290:3000"
+    restart: always 
