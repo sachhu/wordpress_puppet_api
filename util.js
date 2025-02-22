@@ -1,42 +1,5 @@
 const puppeteer = require('puppeteer');
 
-async function makePostRequest(data) {
-    const url = process.env.URL;
-    const browser = await puppeteer.launch({
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
-    const page = await browser.newPage();
-
-    try {
-        await page.goto(url);
-        //await page.waitForTimeout(5000);
-        //await page.waitForNavigation({ waitUntil: 'networkidle2' });
-        const encodedCredentials = Buffer.from(`${process.env.USERNAME}:${process.env.PASSWORD}`).toString('base64');
-        const authHeader = `Basic ${encodedCredentials}`;
-        const response = await page.evaluate(async (url, data, authHeader) => {
-
-            const fetchResponse = await fetch(url + "/wp-json/wp/v2/posts", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': authHeader,
-                },
-                body: JSON.stringify(data),
-            });
-            return fetchResponse.json();
-        }, url, data, authHeader);
-
-        await browser.close();
-        return response;
-
-    } catch (error) {
-        console.error("Error:", error);
-        await browser.close();
-        throw error;
-    }
-}
-
-
 // Function to make API requests via Puppeteer
 async function makeApiRequest(endpoint, method = 'GET', data = null) {
     const url = process.env.URL + endpoint;
@@ -56,12 +19,9 @@ async function makeApiRequest(endpoint, method = 'GET', data = null) {
             if (data) fetchOptions.body = JSON.stringify(data);
 
             const fetchResponse = await fetch(url, fetchOptions);
-            // return JSON.stringify(fetchResponse)
             if (fetchResponse.ok) {
-                // Ensure only serializable data is returned
                 return await fetchResponse.json();
             } else {
-                // Return an error object with serializable properties
                 return {
                     error: true,
                     status: fetchResponse.status,
@@ -122,7 +82,7 @@ async function getOrCreateTag(tagName) {
 // Function to create a blog post
 let browser
 let page
-async function createBlogPost(title, content, categories, tags) {
+async function createBlogPost(title, content, categories, tags, status = "draft") {
     try {
         browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
         page = await browser.newPage();
@@ -136,10 +96,6 @@ async function createBlogPost(title, content, categories, tags) {
         for (let i = 0; i < categories.length; i++) {
             categoryIds[i] = await getOrCreateCategory(categories[i])
         }
-        // const tagIds = await Promise.all(tags.map(getOrCreateTag));
-
-        // const categoryIds = await Promise.all(categories.map(getOrCreateCategory));
-
 
         // Filter out any null values
         const validCategoryIds = categoryIds.filter(id => id !== null);
@@ -149,7 +105,7 @@ async function createBlogPost(title, content, categories, tags) {
         const postData = {
             title,
             content,
-            status: "draft",
+            status,
             categories: validCategoryIds,
             tags: validTagIds
         };
@@ -160,11 +116,11 @@ async function createBlogPost(title, content, categories, tags) {
     } catch (error) {
         console.error("❌ Error Creating Post:", error);
         await browser?.close()
+        throw error
     }
 }
 
 
 module.exports = {
-    makePostRequest,
     createBlogPost
 }

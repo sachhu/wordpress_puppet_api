@@ -1,7 +1,7 @@
 version: "3.9"  # Or a compatible version
 
 services:
-  your-app-name: 
+  blog_bot: 
     build: . 
     ports:
       - "2290:3000"

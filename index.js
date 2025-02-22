@@ -30,7 +30,7 @@ app.post('/api/data', async (req, res) => {
         }
         console.log('Received data:', data);
         // let response = await makePostRequest(data)
-        let response = await createBlogPost(data.title, data.content, data.categories, data.tags)
+        let response = await createBlogPost(data.title, data.content, data.categories, data.tags, data.status)
         res.status(200).json({ message: 'Post successfull', data: response }); 
 
     } catch (error) {
